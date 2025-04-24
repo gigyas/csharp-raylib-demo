@@ -13,6 +13,11 @@ using Raylib_CSharp.Transformations;
 
 namespace HelloWorld;
 
+public static class Constants {
+    public const int SCREEN_WIDTH = 1280;
+    public const int SCREEN_HEIGTH = 720;
+}
+
 enum EntityType {
     Player,
     Asteroid,
@@ -79,6 +84,7 @@ class GameState {
     public SpatialEntity playerEntity;
 
     public GameState() {
+        // Add Player
         Image ship = Image.Load("res/player_ship.png");
         playerEntity = new SpatialEntity();
         playerEntity.type = EntityType.Player;
@@ -98,20 +104,47 @@ class GameState {
 
         entities = new List<Entity>();
         entities.Add(playerEntity);
+
+        // Add some asteroids
+        for(int i = 0; i < 20; i++) {
+            bool safeToAdd = false;
+            Vector2 newCenter = Vector2.Zero;
+            float newRad = 0f;
+            int attempts = 0;
+            while(!safeToAdd && attempts < 30) {
+                newCenter = new Vector2(Random.Shared.Next(Constants.SCREEN_WIDTH)-Constants.SCREEN_WIDTH/2, Random.Shared.Next(Constants.SCREEN_HEIGTH)-Constants.SCREEN_HEIGTH/2);
+                newRad = RayMath.Remap(Random.Shared.NextSingle(), 0, 1, 20, 100);
+                safeToAdd = true;
+                foreach(Entity rawEnt in entities) {
+                    SpatialEntity ent = (SpatialEntity)rawEnt;
+                    if(ShapeHelper.CheckCollisionCircles(ent.P, ent.width/2, newCenter, newRad)) {
+                        safeToAdd = false;
+                        attempts++;
+                        break;
+                    }
+                }
+            }
+            SpatialEntity ast = new SpatialEntity();
+            ast.type = EntityType.Asteroid;
+            ast.P = newCenter;
+            ast.width = newRad * 2;
+            ast.height = newRad * 2;
+            ast.canCollide = true;
+            ast.active = true;
+            ast.dP = new Vector2(Random.Shared.NextSingle()*50-25, Random.Shared.NextSingle()*50-25);
+            entities.Add(ast);
+        }
     }
 
 };
 
 class Game {
-    private const int SCREEN_WIDTH = 1280;
-    private const int SCREEN_HEIGTH = 720;
-
     public static int Main() {
-        Window.Init(SCREEN_WIDTH, SCREEN_HEIGTH, "Hello World");
+        Window.Init(Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGTH, "Hello World");
         Time.SetTargetFPS(60);
 
         GameState game = new GameState();
-        Vector2 halfScreen = new Vector2(SCREEN_WIDTH/2, SCREEN_HEIGTH/2);
+        Vector2 halfScreen = new Vector2(Constants.SCREEN_WIDTH/2, Constants.SCREEN_HEIGTH/2);
         Camera2D cam = new Camera2D(halfScreen, Vector2.Zero, 0, 1);
         float rotSpeed = 9.0f;
 
@@ -138,6 +171,7 @@ class Game {
             }
 
 
+            // Draw
             Graphics.BeginDrawing();
             Graphics.BeginMode2D(cam);
             Graphics.ClearBackground(Color.Black);
@@ -152,10 +186,12 @@ class Game {
                     float half = ent.srcRect.Height/2.0f;
                     Graphics.DrawTexturePro(ent.tex, ent.srcRect, new Rectangle(ent.P.X, ent.P.Y, half*2, half*2), new Vector2(half, half), rotation, Color.White);
                     break;
+
+                    case EntityType.Asteroid:
+                    Graphics.DrawPoly(ent.P, 11, ent.width/2, 0, Color.DarkGray);
+                    break;
                 }
             }
-
-
 
             Graphics.EndMode2D();
             Graphics.DrawFPS(10, 10);
