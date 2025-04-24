@@ -74,6 +74,23 @@ class SpatialEntity : Entity {
                 P.Y -= overlap * (P.Y - targetEnt.P.Y)/cDist;
                 targetEnt.P.X += overlap * (P.X - targetEnt.P.X)/cDist;
                 targetEnt.P.Y += overlap * (P.Y - targetEnt.P.Y)/cDist;
+
+                // Normal
+                Vector2 normal = RayMath.Vector2Scale(RayMath.Vector2Subtract(targetEnt.P, P), 1.0f/cDist);
+                // Tangent
+                Vector2 tan = new Vector2(-normal.Y, normal.X);
+                // Dot Product Tangent
+                float dpTan1 = RayMath.Vector2DotProduct(dP, tan);
+                float dpTan2 = RayMath.Vector2DotProduct(targetEnt.dP, tan);
+                // Dot Product Normal
+                float dpNorm1 = RayMath.Vector2DotProduct(dP, normal);
+                float dpNorm2 = RayMath.Vector2DotProduct(targetEnt.dP, normal);
+
+                float m1 = (dpNorm1*(width-targetEnt.width) + 2*targetEnt.width*dpNorm2)/(width+targetEnt.width);
+                float m2 = (dpNorm2*(targetEnt.width-width) + 2*width*dpNorm1)/(width+targetEnt.width);
+
+                dP = RayMath.Vector2Add(RayMath.Vector2Scale(tan, dpTan1), RayMath.Vector2Scale(normal, m1));
+                targetEnt.dP = RayMath.Vector2Add(RayMath.Vector2Scale(tan, dpTan2), RayMath.Vector2Scale(normal, m2));
             }
         }
     }
