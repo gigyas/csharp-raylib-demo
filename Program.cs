@@ -151,10 +151,19 @@ class Game {
         while (!Window.ShouldClose()) {
             float dt = Time.GetFrameTime();
             float rotInput = 0.0f;
+            float ddPInput = 0.0f;
 
+            // Handle Input
+            if(Input.IsKeyDown(KeyboardKey.W)) {
+                ddPInput = 1.0f;
+            }
+            if(Input.IsKeyDown(KeyboardKey.S)) {
+                ddPInput = -1.0f;
+            }
             if(Input.IsKeyDown(KeyboardKey.D)) {
                 rotInput = rotSpeed * dt;
-            } else if(Input.IsKeyDown(KeyboardKey.A)) {
+            }
+            if(Input.IsKeyDown(KeyboardKey.A)) {
                 rotInput = -rotSpeed * dt;
             }
 
@@ -163,9 +172,13 @@ class Game {
                 SpatialEntity ent = (SpatialEntity)rawEnt;
 
                 switch(ent.type) {
-                    case EntityType.Player:
-                    ent.forward = RayMath.Vector2Rotate(ent.forward, rotInput);
+                    case EntityType.Asteroid:
                         ent.Update(game, dt, Vector2.Zero);
+                        break;
+                    case EntityType.Player:
+                        Vector2 ddP = RayMath.Vector2Scale(ent.forward, ddPInput);
+                        ent.forward = RayMath.Vector2Rotate(ent.forward, rotInput);
+                        ent.Update(game, dt, ddP);
                         break;
                 }
             }
